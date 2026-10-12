@@ -112,6 +112,8 @@ def _smell(
     message: str,
     severity: Severity,
     lines: list[str],
+    *,
+    fixable: bool | None = None,
 ) -> Smell:
     return Smell(
         kind=kind,
@@ -120,7 +122,7 @@ def _smell(
         message=message[:2000],
         severity=severity,
         snippet=_line(lines, line),
-        fixable=kind in FIXES,
+        fixable=kind in FIXES if fixable is None else fixable,
     )
 
 
@@ -190,6 +192,7 @@ def _token_smells(source: str, path: str, lines: list[str]) -> list[Smell]:
                     ".has_key() was removed; use the 'in' operator (manual fix)",
                     Severity.HIGH,
                     lines,
+                    fixable=False,
                 )
             )
         elif (
