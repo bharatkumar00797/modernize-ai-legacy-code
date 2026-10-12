@@ -1,0 +1,7 @@
+{
+  "id": "insecure-config",
+  "title": "Insecure config loader",
+  "description": "Parses config values with eval(), hides errors with a bare except and leaks state through mutable default arguments. The tests encode the safe behavior, so they start red.",
+  "targets": ["legacy/config_loader.py"],
+  "pythonpath": ["legacy"]
+}

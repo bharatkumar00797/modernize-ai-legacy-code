@@ -1,0 +1,7 @@
+{
+  "id": "old-api-helpers",
+  "title": "Old reporting API helpers",
+  "description": "Uses stdlib APIs removed in Python 3 (time.clock, string.letters) plus a %d format whose f-string rewrite would change behavior for floats - the test gate must reject that step. pickle.loads is reported as a residual risk.",
+  "targets": ["legacy/report_helpers.py"],
+  "pythonpath": ["legacy"]
+}

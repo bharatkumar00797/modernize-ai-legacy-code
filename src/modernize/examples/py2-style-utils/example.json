@@ -1,0 +1,7 @@
+{
+  "id": "py2-style-utils",
+  "title": "Python 2 text utilities",
+  "description": "A Python 2 module (print statements, xrange, unicode, iteritems, % formatting). It does not even import on Python 3, so the suite starts red and must go green.",
+  "targets": ["legacy/textutils.py"],
+  "pythonpath": ["legacy"]
+}
