@@ -23,7 +23,7 @@ def apply_unified_diff(source: str, diff: str, path: str) -> str:
         raise PatchError("diff is too large")
     old = source.splitlines(keepends=True)
     out: list[str] = []
-    cursor = 0
+    pos = 0
     i = 0
     hunks = 0
     while i < len(lines):
@@ -45,10 +45,10 @@ def apply_unified_diff(source: str, diff: str, path: str) -> str:
             continue
         hunks += 1
         start = int(match.group(1)) - 1 if int(match.group(2) or "1") else int(match.group(1))
-        if start < cursor or start > len(old):
+        if start < pos or start > len(old):
             raise PatchError("hunks overlap or start beyond the end of the file")
-        out.extend(old[cursor:start])
-        cursor = start
+        out.extend(old[pos:start])
+        pos = start
         i += 1
         while i < len(lines) and not lines[i].startswith(("@@", "--- ", "diff ")):
             body = lines[i]
@@ -57,11 +57,11 @@ def apply_unified_diff(source: str, diff: str, path: str) -> str:
                 i += 1
                 continue
             if tag in {" ", "-"}:
-                if cursor >= len(old) or old[cursor].rstrip("\r\n") != text:
-                    raise PatchError(f"context mismatch at line {cursor + 1}")
+                if pos >= len(old) or old[pos].rstrip("\r\n") != text:
+                    raise PatchError(f"context mismatch at line {pos + 1}")
                 if tag == " ":
-                    out.append(old[cursor])
-                cursor += 1
+                    out.append(old[pos])
+                pos += 1
             elif tag == "+":
                 out.append(text + "\n")
             else:
@@ -69,5 +69,5 @@ def apply_unified_diff(source: str, diff: str, path: str) -> str:
             i += 1
     if hunks == 0:
         raise PatchError("diff contains no hunks")
-    out.extend(old[cursor:])
+    out.extend(old[pos:])
     return "".join(out)
