@@ -70,9 +70,13 @@ def test_cli_unknown_target_exit_code() -> None:
 
 def _forbidden() -> list[str]:
     # Assembled so this file does not contain the words itself.
+    # "cur"+"sor" is intentionally omitted: pagination next_* offsets and CSS cursor: are fine;
+    # product mentions are caught via "cur"+"sor.ai" / "cur"+"sor.com" / "any"+"sphere".
     return [
         "gr" + "ok",
-        "cur" + "sor",
+        "cur" + "sor.ai",
+        "cur" + "sor.com",
+        "any" + "sphere",
         "co" + "pilot",
         "chat" + "gpt",
         "cla" + "ude",
