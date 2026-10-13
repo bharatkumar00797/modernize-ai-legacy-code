@@ -1,11 +1,13 @@
-"""Command line interface: ``modernize examples`` and ``modernize run``."""
+"""Command line interface: ``modernize examples``, ``modernize run`` and ``modernize serve``."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from collections.abc import Sequence
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -33,6 +35,14 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--out", type=Path, default=None, help="write report.md, patch.diff, files")
     run.add_argument("--json", action="store_true", help="print the report as JSON")
     run.add_argument("--quiet", action="store_true", help="no progress output")
+    serve = sub.add_parser("serve", help="start the REST API and web dashboard")
+    serve.add_argument(
+        "--host",
+        default=os.getenv("HOST", "127.0.0.1"),
+        help="bind address (default: $HOST or 127.0.0.1)",
+    )
+    serve.add_argument("--port", type=int, default=None, help="port (default: $PORT or 8000)")
+    serve.add_argument("--dev", action="store_true", help="dev mode: no API key required")
     return parser
 
 
@@ -63,6 +73,33 @@ def _progress(kind: str, data: dict[str, Any]) -> None:
         print("  model reply invalid; retrying / falling back to rules", file=sys.stderr)
 
 
+def _cmd_serve(args: argparse.Namespace) -> int:
+    import uvicorn
+
+    from modernize.api import create_app
+    from modernize.api.settings import ApiSettings
+
+    try:
+        port = args.port or int(os.getenv("PORT") or 8000)
+        settings = ApiSettings.from_env()
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if args.dev:
+        settings = replace(settings, dev_mode=True)
+    if settings.access_mode == "dev" and args.host not in {"127.0.0.1", "::1", "localhost"}:
+        print("warning: dev mode without API keys is exposed beyond localhost", file=sys.stderr)
+    mode = {
+        "api-key": "API-key auth",
+        "dev": "dev mode (no auth)",
+        "public-demo": "public demo (packaged examples + mock provider)",
+    }[settings.access_mode]
+    sync = " | sync runs" if settings.sync_runs else ""
+    print(f"Modernize AI {__version__} on http://{args.host}:{port} | {mode}{sync}", flush=True)
+    uvicorn.run(create_app(settings), host=args.host, port=port, log_level="info")
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -71,6 +108,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"{ex.id:<18} {ex.title}")
             print(f"{'':<18} {ex.description}")
         return 0
+    if args.command == "serve":
+        return _cmd_serve(args)
     if args.command != "run":
         parser.print_help()
         return 0
