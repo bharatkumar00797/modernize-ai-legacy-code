@@ -33,3 +33,19 @@ jobs:
           for ex in py2-style-utils insecure-config old-api-helpers; do
             modernize run "$ex" --out "modernize-output/$ex"
           done
+
+  docker:
+    name: Docker image smoke test
+    runs-on: ubuntu-24.04
+    needs: test
+    steps:
+      - uses: actions/checkout@v5
+      - name: Validate compose file
+        run: docker compose config --quiet
+      - name: Build and start the hardened container
+        run: docker compose up --build --detach --wait --wait-timeout 240
+      - name: Smoke test every packaged example
+        run: python3 scripts/smoke_test.py http://127.0.0.1:8000
+      - name: Tear down
+        if: always()
+        run: docker compose down --volumes

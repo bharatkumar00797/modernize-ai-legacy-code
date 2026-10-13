@@ -1,0 +1,36 @@
+# Local / single-host deployment with a hardened container.
+#   docker compose up --build        -> http://localhost:8000
+# Optional settings are read from .env (see .env.example). Without API keys the server runs as a
+# public demo: packaged examples, offline mock provider.
+services:
+  modernize:
+    build: .
+    image: modernize-ai-legacy-code:local
+    ports:
+      - "${MODERNIZE_HOST_PORT:-8000}:8000"
+    environment:
+      PORT: "8000"
+    env_file:
+      - path: .env
+        required: false
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=128m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    mem_limit: 768m
+    cpus: 1
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/healthz', timeout=4)"
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
