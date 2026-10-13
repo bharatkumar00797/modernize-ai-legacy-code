@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Modernize AI - legacy code modernization agent</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Modernize AI</h1>
+      <p class="tag">Rule-detected smells, LLM-ranked allowlisted refactors, gated by your tests.</p>
+    </div>
+    <div class="meta"><span id="mode" class="pill">loading...</span> <a href="/docs">API docs</a></div>
+  </header>
+  <main>
+    <section class="panel" id="setup">
+      <h2>1. Choose an example</h2>
+      <div class="row">
+        <label>Example <select id="example"></select></label>
+        <label>Max steps <input id="max-steps" type="number" min="1" max="40" value="20"></label>
+        <label id="key-wrap" hidden>API key <input id="apikey" type="password" autocomplete="off"></label>
+      </div>
+      <p id="description" class="question"></p>
+      <ul id="targets" class="options"></ul>
+      <button id="run" type="button">Modernize</button>
+      <span id="status" class="status" role="status"></span>
+    </section>
+
+    <section class="panel" id="result" hidden>
+      <h2>2. Run result</h2>
+      <div id="headline" class="headline"></div>
+      <div class="tabs" role="tablist">
+        <button type="button" data-tab="smells" class="active">Smells</button>
+        <button type="button" data-tab="steps">Steps</button>
+        <button type="button" data-tab="diff">Diff</button>
+        <button type="button" data-tab="report">Report</button>
+      </div>
+      <div id="tab-smells" class="tab">
+        <div class="split">
+          <div>
+            <h3>Before</h3>
+            <table id="smells-before"><thead><tr><th>Kind</th><th>File</th><th>Line</th><th>Severity</th></tr></thead><tbody></tbody></table>
+          </div>
+          <div>
+            <h3>After</h3>
+            <table id="smells-after"><thead><tr><th>Kind</th><th>File</th><th>Line</th><th>Severity</th></tr></thead><tbody></tbody></table>
+          </div>
+        </div>
+      </div>
+      <div id="tab-steps" class="tab" hidden>
+        <ol id="timeline" class="timeline"></ol>
+      </div>
+      <div id="tab-diff" class="tab" hidden>
+        <pre id="diff" class="diff"></pre>
+      </div>
+      <div id="tab-report" class="tab" hidden>
+        <div class="row">
+          <button type="button" id="download-report">Download report.md</button>
+          <button type="button" id="download-patch">Download patch.diff</button>
+        </div>
+        <pre id="report" class="memo"></pre>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Recent runs</h2>
+      <ul id="history" class="history"></ul>
+    </section>
+  </main>
+  <footer>Open source &middot; MIT &middot; offline mock provider by default</footer>
+</body>
+</html>
