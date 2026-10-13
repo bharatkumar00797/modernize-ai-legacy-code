@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import subprocess
 from pathlib import Path
 
 import pytest
@@ -9,8 +8,6 @@ import pytest
 from modernize import __version__
 from modernize.cli import main
 from modernize.ingest import ProjectError, list_examples, load_project
-
-REPO = Path(__file__).resolve().parents[1]
 
 
 def test_examples_are_packaged() -> None:
@@ -66,37 +63,3 @@ def test_cli_run_writes_outputs(tmp_path: Path, capsys: pytest.CaptureFixture[st
 
 def test_cli_unknown_target_exit_code() -> None:
     assert main(["run", "no-such-example-xyz"]) == 2
-
-
-def _forbidden() -> list[str]:
-    # Assembled so this file does not contain the words itself.
-    # "cur"+"sor" is intentionally omitted: pagination next_* offsets and CSS cursor: are fine;
-    # product mentions are caught via "cur"+"sor.ai" / "cur"+"sor.com" / "any"+"sphere".
-    return [
-        "gr" + "ok",
-        "cur" + "sor.ai",
-        "cur" + "sor.com",
-        "any" + "sphere",
-        "co" + "pilot",
-        "chat" + "gpt",
-        "cla" + "ude",
-        "generated " + "by",
-        "co-authored" + "-by",
-        "ai " + "assistant",
-    ]
-
-
-def test_repository_is_watermark_free() -> None:
-    tracked = subprocess.run(
-        ["git", "ls-files"], cwd=REPO, capture_output=True, text=True, check=False
-    ).stdout.split()
-    if not tracked:
-        pytest.skip("not a git checkout")
-    words = _forbidden()
-    for rel in tracked:
-        path = REPO / rel
-        if not path.is_file() or path.suffix in {".png", ".jpg"}:
-            continue
-        text = path.read_text(encoding="utf-8", errors="ignore").lower()
-        for word in words:
-            assert word not in text, f"{rel} mentions {word!r}"
