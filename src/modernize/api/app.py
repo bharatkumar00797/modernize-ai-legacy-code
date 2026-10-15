@@ -75,6 +75,26 @@ def client_ip(request: Request, trust_proxy: bool) -> str:
     return request.client.host if request.client else "unknown"
 
 
+def origin_ip(request: Request, trust_proxy: bool) -> str:
+    """Best guess at the original client address, stable across requests.
+
+    Behind a multi-hop edge (Render, Cloudflare) the right-most X-Forwarded-For hop is an
+    internal proxy that changes from request to request, so it cannot identify a caller.
+    The left-most hop (or True-Client-IP / CF-Connecting-IP) is stable. It can be forged, so
+    it is only used to group anonymous demo runs, never for rate limiting.
+    """
+    if trust_proxy:
+        for name in ("true-client-ip", "cf-connecting-ip"):
+            value = request.headers.get(name, "").strip()
+            if value:
+                return value[:64]
+        hops = [h.strip() for h in request.headers.get("x-forwarded-for", "").split(",")]
+        hops = [h for h in hops if h]
+        if hops:
+            return hops[0][:64]
+    return client_ip(request, trust_proxy)
+
+
 def presented_key(request: Request) -> str | None:
     key = request.headers.get("x-api-key")
     if key and key.strip():
@@ -104,7 +124,8 @@ class AccessGuard:
         ip = client_ip(request, self.settings.trust_proxy)
         if self.settings.dev_mode:
             return Caller("dev", None, f"ip:{ip}", True)
-        anon = "anon:" + hashlib.sha256(ip.encode()).hexdigest()[:12]
+        origin = origin_ip(request, self.settings.trust_proxy)
+        anon = "anon:" + hashlib.sha256(origin.encode()).hexdigest()[:12]
         return Caller(anon, anon, f"ip:{ip}", False)
 
     def __call__(self, request: Request) -> Caller:

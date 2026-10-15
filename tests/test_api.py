@@ -222,3 +222,22 @@ def test_extra_fields_forbidden() -> None:
         client().post("/api/runs", json={"example": "old-api-helpers", "extra": 1}).status_code
         == 422
     )
+
+
+def test_public_demo_run_visible_when_proxy_hop_changes() -> None:
+    # Render's edge appends a different internal hop to X-Forwarded-For on each request.
+    api = client(ApiSettings(trust_proxy=True, sync_runs=True))
+    created = api.post(
+        "/api/runs",
+        json={"example": "old-api-helpers"},
+        headers={"X-Forwarded-For": "203.0.113.7, 10.0.0.1"},
+    )
+    assert created.status_code == 200
+    run_id = created.json()["id"]
+    hop = {"X-Forwarded-For": "203.0.113.7, 10.0.0.2"}
+    assert api.get(f"/api/runs/{run_id}", headers=hop).status_code == 200
+    assert api.get(f"/api/runs/{run_id}/report.md", headers=hop).status_code == 200
+    runs = api.get("/api/runs", headers=hop).json()["runs"]
+    assert [r["id"] for r in runs] == [run_id]
+    other = {"X-Forwarded-For": "198.51.100.9, 10.0.0.1"}
+    assert api.get(f"/api/runs/{run_id}", headers=other).status_code == 404
